@@ -25,21 +25,6 @@ type ConvertTest struct {
 	Value string
 }
 
-func TestToStringWithErr(t *testing.T) {
-	for _, data := range testData {
-		t.Run(data.name, func(t *testing.T) {
-			ret, err := ToStringWithErr(data.input)
-			if err != nil && !data.expectError {
-				t.Errorf("error occurred: %v", err)
-			} else if err == nil && data.expectError {
-				t.Error("expected error but none occurred")
-			} else if ret != data.expect {
-				t.Errorf("expected %q but got %q", data.expect, ret)
-			}
-		})
-	}
-}
-
 func TestCouldBeString(t *testing.T) {
 	for _, data := range testData {
 		t.Run(data.name, func(t *testing.T) {
@@ -64,6 +49,53 @@ func TestToString(t *testing.T) {
 
 			ret := ToString(data.input)
 			if ret != data.expect {
+				t.Errorf("expected %q but got %q", data.expect, ret)
+			}
+		})
+	}
+}
+
+func TestToStringWithErr(t *testing.T) {
+	for _, data := range testData {
+		t.Run(data.name, func(t *testing.T) {
+			ret, err := ToStringWithErr(data.input)
+			if err != nil && !data.expectError {
+				t.Errorf("error occurred: %v", err)
+			} else if err == nil && data.expectError {
+				t.Error("expected error but none occurred")
+			} else if ret != data.expect {
+				t.Errorf("expected %q but got %q", data.expect, ret)
+			}
+		})
+	}
+}
+
+func TestToCompactString(t *testing.T) {
+	for _, data := range testData {
+		t.Run(data.name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r != nil && !data.expectError {
+					t.Errorf("unexpected panic: %v", r)
+				}
+			}()
+
+			ret := ToCompactString(data.input)
+			if ret != data.expect {
+				t.Errorf("expected %q but got %q", data.expect, ret)
+			}
+		})
+	}
+}
+
+func TestToCompactStringWithErr(t *testing.T) {
+	for _, data := range testData {
+		t.Run(data.name, func(t *testing.T) {
+			ret, err := ToCompactStringWithErr(data.input)
+			if err != nil && !data.expectError {
+				t.Errorf("error occurred: %v", err)
+			} else if err == nil && data.expectError {
+				t.Error("expected error but none occurred")
+			} else if ret != data.expect {
 				t.Errorf("expected %q but got %q", data.expect, ret)
 			}
 		})

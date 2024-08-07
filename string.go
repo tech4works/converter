@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
+	"strings"
 )
 
 // CouldBeString inspects if a given value could be converted to a string representation with an error.
@@ -129,4 +131,95 @@ func ToStringWithErr(a any) (string, error) {
 	default:
 		return "", fmt.Errorf("error convert to string, unsupported type %s", reflectValue.Kind().String())
 	}
+}
+
+// ToCompactString converts a given value to a string representation in a compact form.
+// It uses the ToCompactStringWithErr function to convert the value into compact string .
+// If it encounters an error during this process, it will panic.
+//
+// The compact form of a string is obtained by removing extra white spaces.
+//
+// Please note that this conversion process utilizes reflection to inspect the type of the value, apply appropriate
+// conversion methods and catch any potential errors.
+// If any unsupported types are encountered during this conversion process, this function will panic.
+//
+// Parameters:
+//   - a: The value of any type to be converted to a string in a compact form.
+//
+// Returns:
+//   - string: The compact string representation of the provided value.
+//
+// Panics:
+//   - If it encounters an error during this process, it will panic.
+//
+// Example:
+//
+//	 var x map[string]string = map[string]string{
+//			"a": "apple",
+//			"b": "banana",
+//		}
+//	 s := ToCompactString(x)     // "{"a":"apple","b":"banana"}"
+//	 fmt.Println(s)
+//
+//	 y := "Hello,         World!   How are you?     "
+//	 s = ToCompactString(x)       // "Hello, World! How are you?"
+//	 fmt.Println(s)
+func ToCompactString(a any) string {
+	str, err := ToCompactStringWithErr(a)
+	if err != nil {
+		panic(err)
+	}
+	return str
+}
+
+// ToCompactStringWithErr converts a given value to a string
+// representation in a compact form, where all white spaces are replaced by single spaces.
+// It leverages the ToStringWithErr function for conversion,
+// which caters to various types handled via reflection.
+// Should the conversion encounter an error, it returns the error.
+//
+// The compact form of a string is one where multiple consecutive white spaces
+// get replaced by a single space. The function utilizes regular expressions
+// to achieve this.
+//
+// Parameters:
+//   - a: The value of any type to be converted to a compact string.
+//
+// Returns:
+//   - string: The compact string representation of the provided value.
+//   - error: An error is returned in case of failure to convert.
+//
+// Panics:
+//   - While the function itself doesn't panic, be aware that the underlying
+//     ToStringWithErr function might panic for unsupported types.
+//
+// Example:
+//
+//	var x map[string]string = map[string]string{
+//		"first": "Hello,     World!   ",
+//		"second": "How     are you?  ",
+//	}
+//	s, err := ToCompactStringWithErr(x)
+//	if err != nil {
+//		fmt.Println(err)
+//	}
+//	// "{"first":"Hello, World!","second":"How are you?"}", nil
+//	fmt.Println(s, err)
+//
+//	y := "Hello,       World!    How   are    you?       "
+//	s, err = ToCompactStringWithErr(y)
+//	// "Hello, World! How are you?", nil
+//	fmt.Println(s, err)
+func ToCompactStringWithErr(a any) (string, error) {
+	s, err := ToStringWithErr(a)
+	if err != nil {
+		return "", err
+	}
+
+	regex := regexp.MustCompile(`\s+`)
+
+	s = strings.TrimSpace(s)
+	s = regex.ReplaceAllString(s, " ")
+
+	return s, nil
 }
