@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+// TODO: Complementar exemplos
+
 // CouldBeString inspects if a given value could be converted to a string representation with an error.
 // The function uses the ToStringWithErr function to attempt the conversion and
 // returns a boolean indicating if the operation is successful or not.
