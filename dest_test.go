@@ -21,12 +21,55 @@ type testStruct struct {
 	Status   string `json:"status,omitempty"`
 }
 
+func TestToDest(t *testing.T) {
+	for _, tt := range initDestTestCases() {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.err {
+				defer func() {
+					if r := recover(); r == nil {
+						t.Errorf("The code did not panic")
+					}
+				}()
+			}
+
+			ToDest(tt.a, tt.dest)
+		})
+	}
+}
+
 func TestToDestWithErr(t *testing.T) {
-	testCases := []destCase{
+	for _, tt := range initDestTestCases() {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := ToDestWithErr(tt.a, tt.dest); (err != nil) && !tt.err {
+				t.Errorf("ToDestWithErr() = %v, want = %v", err, tt.err)
+				return
+			}
+			toString, err := ToStringWithErr(tt.dest)
+			if err == nil {
+				t.Logf("ToDestWithErr() = %v", toString)
+			}
+		})
+	}
+}
+
+func initDestTestCases() []destCase {
+	return []destCase{
 		{
 			name: "String",
 			a:    "value param",
 			dest: ToPointer(any(2)),
+			err:  false,
+		},
+		{
+			name: "String",
+			a:    "value param",
+			dest: ToPointer(""),
+			err:  false,
+		},
+		{
+			name: "Bool",
+			a:    "true",
+			dest: ToPointer(false),
 			err:  false,
 		},
 		{
@@ -45,6 +88,12 @@ func TestToDestWithErr(t *testing.T) {
 			name: "Float",
 			a:    42.23123,
 			dest: ToPointer(0.0),
+			err:  false,
+		},
+		{
+			name: "Complex",
+			a:    42.23123,
+			dest: ToPointer(complex(0.0, 0)),
 			err:  false,
 		},
 		{
@@ -95,18 +144,65 @@ func TestToDestWithErr(t *testing.T) {
 			dest: ToPointer(func() {}),
 			err:  true,
 		},
-	}
-
-	for _, tt := range testCases {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := ToDestWithErr(tt.a, tt.dest); (err != nil) && !tt.err {
-				t.Errorf("ToDestWithErr() = %v, want = %v", err, tt.err)
-				return
-			}
-			toString, err := ToStringWithErr(tt.dest)
-			if err == nil {
-				t.Logf("ToDestWithErr() = %v", toString)
-			}
-		})
+		{
+			name: "Nil Dest",
+			a:    "{}",
+			dest: (*map[string]any)(nil),
+			err:  true,
+		},
+		{
+			name: "Invalid Dest",
+			a:    "{}",
+			dest: map[string]any{},
+			err:  true,
+		},
+		{
+			name: "Invalid Value",
+			a:    nil,
+			dest: ToPointer(map[string]any{}),
+			err:  true,
+		},
+		{
+			name: "Invalid Value Func",
+			a:    func() {},
+			dest: ToPointer(map[string]any{}),
+			err:  true,
+		},
+		{
+			name: "Invalid Value Func",
+			a:    func() {},
+			dest: ToPointer(""),
+			err:  true,
+		},
+		{
+			name: "Invalid Value Bool",
+			a:    func() {},
+			dest: ToPointer(false),
+			err:  true,
+		},
+		{
+			name: "Invalid Value Int",
+			a:    func() {},
+			dest: ToPointer(1),
+			err:  true,
+		},
+		{
+			name: "Invalid Value Uint",
+			a:    func() {},
+			dest: ToPointer(uint(1)),
+			err:  true,
+		},
+		{
+			name: "Invalid Value Float",
+			a:    func() {},
+			dest: ToPointer(1.0),
+			err:  true,
+		},
+		{
+			name: "Invalid Value Complex",
+			a:    func() {},
+			dest: ToPointer(complex(1.0, 1)),
+			err:  true,
+		},
 	}
 }
