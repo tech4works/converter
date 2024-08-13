@@ -133,6 +133,11 @@ func ToBoolWithErr(a any) (bool, error) {
 			return false, errors.New("error convert to bool, it is null")
 		}
 		return ToBoolWithErr(reflectValue.Elem().Interface())
+	case reflect.Array, reflect.Slice:
+		if reflectValue.Type().Elem().Kind() == reflect.Uint8 {
+			return strconv.ParseBool(string(reflectValue.Bytes()))
+		}
+		return false, fmt.Errorf("error convert to bool, unsupported type %s", reflectValue.Kind().String())
 	default:
 		return false, fmt.Errorf("error convert to bool, unsupported type %s", reflectValue.Kind().String())
 	}

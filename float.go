@@ -176,12 +176,17 @@ func ToFloat64WithErr(a any) (float64, error) {
 			return 1, nil
 		}
 		return 0, nil
+	case reflect.Array, reflect.Slice:
+		if reflectValue.Type().Elem().Kind() == reflect.Uint8 {
+			return strconv.ParseFloat(string(reflectValue.Bytes()), 64)
+		}
+		return 0, fmt.Errorf("error convert to float, unsupported type %s", reflectValue.Kind().String())
 	case reflect.Interface, reflect.Pointer:
 		if reflectValue.IsNil() {
-			return 0, errors.New("error convert to float64, it is null")
+			return 0, errors.New("error convert to float, it is null")
 		}
 		return ToFloat64WithErr(reflectValue.Elem().Interface())
 	default:
-		return 0, fmt.Errorf("error convert to float64, unsupported type %s", reflectValue.Kind().String())
+		return 0, fmt.Errorf("error convert to float, unsupported type %s", reflectValue.Kind().String())
 	}
 }

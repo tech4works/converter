@@ -121,6 +121,11 @@ func ToUintWithErr(a any) (uint, error) {
 			return 1, nil
 		}
 		return 0, nil
+	case reflect.Array, reflect.Slice:
+		if reflectValue.Type().Elem().Kind() == reflect.Uint8 {
+			return ToUintWithErr(string(reflectValue.Bytes()))
+		}
+		return 0, fmt.Errorf("error convert to uint, unsupported type %s", reflectValue.Kind().String())
 	case reflect.Interface, reflect.Pointer:
 		if reflectValue.IsNil() {
 			return 0, errors.New("error convert to uint, it is null")
