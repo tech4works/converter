@@ -101,7 +101,22 @@ func ToString(a any) string {
 //	fmt.Println(ToStringWithErr(x)) // "10", nil
 //	fmt.Println(ToStringWithErr(y)) // "Hello", nil
 func ToStringWithErr(a any) (string, error) {
+	if a == nil {
+		return "", errors.New("error convert to string, it is null")
+	}
+
 	reflectValue := reflect.ValueOf(a)
+
+	if reflectValue.Kind() == reflect.Ptr || reflectValue.Kind() == reflect.Interface {
+		if reflectValue.IsNil() {
+			return "", errors.New("error convert to string, it is null")
+		}
+		return ToStringWithErr(reflectValue.Elem().Interface())
+	}
+
+	if stringer, ok := a.(fmt.Stringer); ok {
+		return stringer.String(), nil
+	}
 
 	switch reflectValue.Kind() {
 	case reflect.String:
@@ -116,20 +131,25 @@ func ToStringWithErr(a any) (string, error) {
 		return strconv.FormatComplex(reflectValue.Complex(), 'g', -1, 64), nil
 	case reflect.Bool:
 		return strconv.FormatBool(reflectValue.Bool()), nil
-	case reflect.Array, reflect.Slice:
+	case reflect.Slice:
 		if reflectValue.Type().Elem().Kind() == reflect.Uint8 {
 			return string(reflectValue.Bytes()), nil
+		}
+		marshal, _ := json.Marshal(reflectValue.Interface())
+		return string(marshal), nil
+	case reflect.Array:
+		if reflectValue.Type().Elem().Kind() == reflect.Uint8 {
+			bytes := make([]byte, reflectValue.Len())
+			for i := 0; i < reflectValue.Len(); i++ {
+				bytes[i] = byte(reflectValue.Index(i).Uint())
+			}
+			return string(bytes), nil
 		}
 		marshal, _ := json.Marshal(reflectValue.Interface())
 		return string(marshal), nil
 	case reflect.Map, reflect.Struct:
 		marshal, _ := json.Marshal(reflectValue.Interface())
 		return string(marshal), nil
-	case reflect.Ptr, reflect.Interface:
-		if reflectValue.IsNil() {
-			return "", errors.New("error convert to string, it is null")
-		}
-		return ToStringWithErr(reflectValue.Elem().Interface())
 	default:
 		return "", fmt.Errorf("error convert to string, unsupported type %s", reflectValue.Kind().String())
 	}
