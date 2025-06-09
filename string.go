@@ -116,6 +116,8 @@ func ToStringWithErr(a any) (string, error) {
 
 	if stringer, ok := a.(fmt.Stringer); ok {
 		return stringer.String(), nil
+	} else if err, ok := a.(error); ok {
+		return err.Error(), nil
 	}
 
 	switch reflectValue.Kind() {
