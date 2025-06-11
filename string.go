@@ -106,12 +106,23 @@ func ToStringWithErr(a any) (string, error) {
 	}
 
 	reflectValue := reflect.ValueOf(a)
+	reflectType := reflectValue.Type()
 
 	if reflectValue.Kind() == reflect.Ptr || reflectValue.Kind() == reflect.Interface {
 		if reflectValue.IsNil() {
 			return "", errors.New("error convert to string, it is null")
+		} else if implementsStringer(reflectType) {
+			return reflectValue.Interface().(fmt.Stringer).String(), nil
+		} else if implementsError(reflectType) {
+			return reflectValue.Interface().(error).Error(), nil
 		}
 		return ToStringWithErr(reflectValue.Elem().Interface())
+	}
+
+	if implementsStringer(reflectType) {
+		return reflectValue.Interface().(fmt.Stringer).String(), nil
+	} else if implementsError(reflectType) {
+		return reflectValue.Interface().(error).Error(), nil
 	}
 
 	if stringer, ok := a.(fmt.Stringer); ok {
@@ -246,4 +257,18 @@ func ToCompactStringWithErr(a any) (string, error) {
 	s = regex.ReplaceAllString(s, " ")
 
 	return s, nil
+}
+
+func implementsStringer(reflectType reflect.Type) bool {
+	if reflectType == nil {
+		return false
+	}
+	return reflectType.Implements(reflect.TypeOf((*fmt.Stringer)(nil)).Elem())
+}
+
+func implementsError(reflectType reflect.Type) bool {
+	if reflectType == nil {
+		return false
+	}
+	return reflectType.Implements(reflect.TypeOf((*error)(nil)).Elem())
 }
