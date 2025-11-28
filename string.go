@@ -111,18 +111,12 @@ func ToStringWithErr(a any) (string, error) {
 	if reflectValue.Kind() == reflect.Ptr || reflectValue.Kind() == reflect.Interface {
 		if reflectValue.IsNil() {
 			return "", errors.New("error convert to string, it is null")
-		} else if implementsStringer(reflectType) {
-			return reflectValue.Interface().(fmt.Stringer).String(), nil
-		} else if implementsError(reflectType) {
-			return reflectValue.Interface().(error).Error(), nil
+		} else if result, err := resolveImplementsIfPresent(reflectType, reflectValue); err != nil || result != "" {
+			return result, err
 		}
 		return ToStringWithErr(reflectValue.Elem().Interface())
-	}
-
-	if implementsStringer(reflectType) {
-		return reflectValue.Interface().(fmt.Stringer).String(), nil
-	} else if implementsError(reflectType) {
-		return reflectValue.Interface().(error).Error(), nil
+	} else if result, err := resolveImplementsIfPresent(reflectType, reflectValue); err != nil || result != "" {
+		return result, err
 	}
 
 	if stringer, ok := a.(fmt.Stringer); ok {
@@ -148,8 +142,8 @@ func ToStringWithErr(a any) (string, error) {
 		if reflectValue.Type().Elem().Kind() == reflect.Uint8 {
 			return string(reflectValue.Bytes()), nil
 		}
-		marshal, _ := json.Marshal(reflectValue.Interface())
-		return string(marshal), nil
+		marshal, err := json.Marshal(reflectValue.Interface())
+		return string(marshal), err
 	case reflect.Array:
 		if reflectValue.Type().Elem().Kind() == reflect.Uint8 {
 			bytes := make([]byte, reflectValue.Len())
@@ -158,11 +152,11 @@ func ToStringWithErr(a any) (string, error) {
 			}
 			return string(bytes), nil
 		}
-		marshal, _ := json.Marshal(reflectValue.Interface())
-		return string(marshal), nil
+		marshal, err := json.Marshal(reflectValue.Interface())
+		return string(marshal), err
 	case reflect.Map, reflect.Struct:
-		marshal, _ := json.Marshal(reflectValue.Interface())
-		return string(marshal), nil
+		marshal, err := json.Marshal(reflectValue.Interface())
+		return string(marshal), err
 	default:
 		return "", fmt.Errorf("error convert to string, unsupported type %s", reflectValue.Kind().String())
 	}
@@ -266,9 +260,28 @@ func implementsStringer(reflectType reflect.Type) bool {
 	return reflectType.Implements(reflect.TypeOf((*fmt.Stringer)(nil)).Elem())
 }
 
+func implementsMarshaler(reflectType reflect.Type) bool {
+	if reflectType == nil {
+		return false
+	}
+	return reflectType.Implements(reflect.TypeOf((*json.Marshaler)(nil)).Elem())
+}
+
 func implementsError(reflectType reflect.Type) bool {
 	if reflectType == nil {
 		return false
 	}
 	return reflectType.Implements(reflect.TypeOf((*error)(nil)).Elem())
+}
+
+func resolveImplementsIfPresent(reflectType reflect.Type, reflectValue reflect.Value) (string, error) {
+	if implementsStringer(reflectType) {
+		return reflectValue.Interface().(fmt.Stringer).String(), nil
+	} else if implementsMarshaler(reflectType) {
+		marshal, err := json.Marshal(reflectValue.Interface())
+		return string(marshal), err
+	} else if implementsError(reflectType) {
+		return reflectValue.Interface().(error).Error(), nil
+	}
+	return "", nil
 }
