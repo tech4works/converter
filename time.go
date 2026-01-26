@@ -58,15 +58,28 @@ func ToDateWithErr(a any) (time.Time, error) {
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location()), nil
 }
 
-func MonthYearToTime(month int, year int, loc *time.Location) (time.Time, error) {
+func MonthYearToTimeFromInts(month int, year int, loc *time.Location) (time.Time, error) {
 	if month < 1 || month > 12 {
 		return time.Time{}, fmt.Errorf("invalid month: %d", month)
-	}
-	if year < 1 {
-		return time.Time{}, fmt.Errorf("invalid year: %d", year)
 	}
 	if loc == nil {
 		loc = time.UTC
 	}
+
+	if year <= 2 {
+		y4, err := normalize2DigitYearTo4(year)
+		if err != nil {
+			return time.Time{}, err
+		}
+		year = y4
+	}
+
 	return time.Date(year, time.Month(month), 1, 0, 0, 0, 0, loc), nil
+}
+
+func normalize2DigitYearTo4(year2 int) (int, error) {
+	if year2 < 0 || year2 > 99 {
+		return 0, fmt.Errorf("invalid 2-digit year: %d", year2)
+	}
+	return 2000 + year2, nil
 }
