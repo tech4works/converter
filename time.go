@@ -57,3 +57,16 @@ func ToDateWithErr(a any) (time.Time, error) {
 	}
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location()), nil
 }
+
+func MonthYearToTime(month int, year int, loc *time.Location) (time.Time, error) {
+	if month < 1 || month > 12 {
+		return time.Time{}, fmt.Errorf("invalid month: %d", month)
+	}
+	if year < 1 {
+		return time.Time{}, fmt.Errorf("invalid year: %d", year)
+	}
+	if loc == nil {
+		loc = time.UTC
+	}
+	return time.Date(year, time.Month(month), 1, 0, 0, 0, 0, loc), nil
+}
