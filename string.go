@@ -1,6 +1,7 @@
 package converter
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -240,15 +241,22 @@ func ToCompactString(a any) string {
 //	// "Hello, World! How are you?", nil
 //	fmt.Println(s, err)
 func ToCompactStringWithErr(a any) (string, error) {
-	s, err := ToStringWithErr(a)
+	bs, err := ToBytesWithErr(a)
 	if err != nil {
 		return "", err
 	}
 
-	regex := regexp.MustCompile(`\s+`)
+	if json.Valid(bs) {
+		var buf bytes.Buffer
+		if err = json.Compact(&buf, bs); err != nil {
+			return "", err
+		}
+		return buf.String(), nil
+	}
 
+	s := string(bs)
+	s = regexp.MustCompile(`\s+`).ReplaceAllString(s, " ")
 	s = strings.TrimSpace(s)
-	s = regex.ReplaceAllString(s, " ")
 
 	return s, nil
 }
