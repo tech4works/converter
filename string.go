@@ -112,11 +112,11 @@ func ToStringWithErr(a any) (string, error) {
 	if reflectValue.Kind() == reflect.Ptr || reflectValue.Kind() == reflect.Interface {
 		if reflectValue.IsNil() {
 			return "", errors.New("error convert to string, it is null")
-		} else if result, err := resolveImplementsIfPresent(reflectType, reflectValue); err != nil || result != "" {
+		} else if result, err := resolveStringImplementsIfPresent(reflectType, reflectValue); err != nil || result != "" {
 			return result, err
 		}
 		return ToStringWithErr(reflectValue.Elem().Interface())
-	} else if result, err := resolveImplementsIfPresent(reflectType, reflectValue); err != nil || result != "" {
+	} else if result, err := resolveStringImplementsIfPresent(reflectType, reflectValue); err != nil || result != "" {
 		return result, err
 	}
 
@@ -282,7 +282,7 @@ func implementsError(reflectType reflect.Type) bool {
 	return reflectType.Implements(reflect.TypeOf((*error)(nil)).Elem())
 }
 
-func resolveImplementsIfPresent(reflectType reflect.Type, reflectValue reflect.Value) (string, error) {
+func resolveStringImplementsIfPresent(reflectType reflect.Type, reflectValue reflect.Value) (string, error) {
 	if implementsStringer(reflectType) {
 		return reflectValue.Interface().(fmt.Stringer).String(), nil
 	} else if implementsMarshaler(reflectType) {
