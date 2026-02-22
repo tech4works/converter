@@ -1,5 +1,11 @@
 package converter
 
 func ToSlice[T any](v ...T) []T {
-	return v
+	var ts []T
+	for _, t := range v {
+		if t != nil {
+			ts = append(ts, t)
+		}
+	}
+	return ts
 }
