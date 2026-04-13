@@ -18,7 +18,7 @@ func ToSliceIfNonNil[T any](v ...T) []T {
 
 func isNonNil(i any) bool {
 	if i == nil {
-		return true
+		return false
 	}
 	val := reflect.ValueOf(i)
 	switch val.Kind() {
